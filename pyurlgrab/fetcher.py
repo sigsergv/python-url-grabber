@@ -9,7 +9,8 @@ import urllib.request
 import urllib.error
 from tempfile import mkstemp
 
-from .error import HTTPNotFoundError
+from .error import (HTTPNotFoundError, NotProcessedError, OtherError,
+    HTTPForbiddenError)
 
 class Fetcher:
     HTTP_ERROR = 1
@@ -69,12 +70,11 @@ class Fetcher:
                     'cacheName': cache_data_filename 
                 }
             except urllib.error.HTTPError as e:
-                if e.code == 404:
-                    # remember, this URL could not be retrieved
-                    self.cache[url] = {
-                        'error': self.HTTP_ERROR,
-                        'errorCode': 404
-                    }
+                # remember, this URL could not be retrieved
+                self.cache[url] = {
+                    'error': self.HTTP_ERROR,
+                    'errorCode': e.code
+                }
 
         self.save()
 
@@ -83,7 +83,12 @@ class Fetcher:
 
             if 'error' in cr:
                 if cr['error'] == self.HTTP_ERROR:
-                    raise HTTPNotFoundError()
+                    if cr['errorCode'] == 404:
+                        raise HTTPNotFoundError()
+                    elif cr['errorCode'] == 403:
+                        raise HTTPForbiddenError()
+                    else:
+                        raise OtherError('HTTP Error: {0}'.format(cr['errorCode']))
                 raise OtherError()
 
             elif 'cacheName' in cr:

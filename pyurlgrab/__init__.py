@@ -2,4 +2,5 @@
 """
 
 from .fetcher import Fetcher
-from .error import (HTTPNotFoundError, NotProcessedError)
+from .error import (HTTPNotFoundError, NotProcessedError, OtherError,
+    HTTPForbiddenError)
