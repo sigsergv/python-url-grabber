@@ -1,4 +1,5 @@
 """
 """
 
-from fetcher import Fetcher
+from .fetcher import Fetcher
+from .error import (HTTPNotFoundError, NotProcessedError)
