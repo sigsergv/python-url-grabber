@@ -33,16 +33,8 @@ class Fetcher:
             os.makedirs(cache_path)
         self.cache_path = cache_path
         self.cache_index_file = os.path.join(self.cache_path, 'index.json')
-
-        # initialize cache
-        try:
-            with open(self.cache_index_file, 'r') as fp:
-                try:
-                    self.cache = json.load(fp)
-                except ValueError:
-                    self.cache = {}
-        except FileNotFoundError:
-            self.cache = {}
+    
+        self.init_cache()
 
         self.request_headers = {
             'User-Agent': user_agent
@@ -76,7 +68,7 @@ class Fetcher:
                     'errorCode': e.code
                 }
 
-        self.save()
+        self.save_cache()
 
         if url in self.cache:
             cr = self.cache[url]
@@ -100,8 +92,33 @@ class Fetcher:
         raise NotProcessedError()
 
 
-    def save(self):
+    def save_cache(self):
         """Save cache data to the index file
         """
+        # we need to sync data: open file, read, merge, write
+        try:
+            with open(self.cache_index_file, 'r') as fp:
+                cache = json.load(fp)
+        except FileNotFoundError:
+            cache = {}
+            pass
+
+        # merge
+        for (k,v) in self.cache.items():
+            cache[k] = v
+
         with open(self.cache_index_file, 'w') as fp:
-            json.dump(self.cache, fp)
+            json.dump(cache, fp)
+
+
+    def init_cache(self):
+        """Init cache index for first time
+        """
+        try:
+            with open(self.cache_index_file, 'r') as fp:
+                try:
+                    self.cache = json.load(fp)
+                except ValueError:
+                    self.cache = {}
+        except FileNotFoundError:
+            self.cache = {}
